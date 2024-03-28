@@ -1,28 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
-
-interface PostInterface {
-  id: number;
-  title: string;
-  thumbnailUrl: string;
-  createdAt: string;
-  categories: string[];
-  content: string;
-}
+import { usePosts } from "./hooks/usePosts";
 
 export default function Home() {
-  const [post, setPost] = useState([]);
-  useEffect(() => {
-    const fecher = async () => {
-      const response = await fetch(
-        "https://1hmfpsvto6.execute-api.ap-northeast-1.amazonaws.com/dev/posts"
-      );
-      const { posts } = await response.json();
-      setPost(posts);
-    };
-    fecher();
-  }, []);
+  const { posts } = usePosts();
 
   const formatDate = (jsonDate: string) => {
     const dateObj = new Date(jsonDate);
@@ -48,7 +29,7 @@ export default function Home() {
   return (
     <>
       <div>
-        {post.map((post: PostInterface) => {
+        {posts.map((post) => {
           const formattedDate = formatDate(post.createdAt);
           const limitedContent = limitContent(post.content);
           const replacedContent = replaceContent(limitedContent);
@@ -57,6 +38,7 @@ export default function Home() {
               <div className="shadow-md m-12" key={post.id}>
                 <p className="p-4 text-xs">{formattedDate}</p>
                 <h2 className="p-2 text-2xl">{post.title}</h2>
+                <img src={post.thumbnail.url} alt={post.title} />
                 <p className="p-4"> {replacedContent}</p>
               </div>
             </Link>
