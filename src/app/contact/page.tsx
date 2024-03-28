@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import InputField from "../_components/Input";
-import TextareaField from "../_components/Textarea";
+import InputField from "./_components/Input";
+import TextareaField from "./_components/Textarea";
 import useFormValidation from "./_components/useFormValidation";
 
 const Contact: React.FC = () => {
