@@ -1,8 +1,13 @@
-export interface MicroCmsPost {
-  id: string;
+/** @format */
+
+import { Category } from "@/types/Category";
+
+export interface Post {
+  id: number;
   title: string;
   content: string;
   createdAt: string;
-  categories: { id: string; name: string }[];
-  thumbnail: { url: string; height: number; width: number };
+  postCategories: { category: Category }[];
+  thumbnailUrl: string;
+  thumbnailImageKey?: string;
 }
