@@ -38,7 +38,7 @@ export default function Home() {
               <div className="shadow-md m-12" key={post.id}>
                 <p className="p-4 text-xs">{formattedDate}</p>
                 <h2 className="p-2 text-2xl">{post.title}</h2>
-                <img src={post.thumbnail.url} alt={post.title} />
+                <img src={post.thumbnailUrl} alt={post.title} />
                 <p className="p-4"> {replacedContent}</p>
               </div>
             </Link>
