@@ -1,58 +1,45 @@
 /** @format */
 "use client";
-import React from "react";
-import { useState, useEffect } from "react";
-import { Post } from "@/types/Post";
+import React, { useState, useEffect } from "react";
 import PostForm from "@/app/admin/posts/_componets/PostForm";
 import { useParams, useRouter } from "next/navigation";
-import { Category } from "@/types/Category";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import { FormData } from "@/types/FormData";
+import { updatePost, deletePost } from "@/app/admin/_hooks/useAdminPost";
 import {
+  useFetchPostData,
   useAdminPost,
-  updatePost,
-  deletePost,
-  fetchCategories,
 } from "@/app/admin/_hooks/useAdminPost";
 
 export default function Page() {
-  const [post, setPost] = useState<Post | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { id } = useParams();
+  const { id } = useParams<{ id: string | string[] }>();
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
   const { token } = useSupabaseSession();
-  const [thumbnailImageKey, setThumbnailImageKey] = useState("");
+  const [thumbnailImageKey, setThumbnailImageKey] = useState<string>("");
 
   useEffect(() => {
-    if (!token || !id || Array.isArray(id)) return;
+    console.log("Token:", token); // トークンをログ出力して確認
+  }, [token]);
 
-    const fetchData = async () => {
-      const post = await useAdminPost(id, token);
-      if (post) {
-        setPost(post);
-        setThumbnailImageKey(post.thumbnailImageKey || "");
-      } else {
-        setError("投稿がありません。");
-      }
-      setIsLoading(false);
-    };
+  const { post, postError, isLoading, categories, categoriesError } =
+    useFetchPostData(id as string, token);
 
-    fetchData();
-  }, [token, id]);
+  useEffect(() => {
+    if (post && post.thumbnailImageKey) {
+      setThumbnailImageKey(post.thumbnailImageKey);
+    }
+  }, [post]);
 
   const handleFormSubmit = async (data: FormData) => {
-    if (!id || Array.isArray(id)) return;
-    if (!token || Array.isArray(token)) return;
+    if (!id || !token) return;
 
     const postData = {
       title: data.title,
       content: data.content,
       thumbnailImageKey: data.thumbnailImageKey,
-      categories: [data.category], // categoriesを選択したカテゴリのIDに変更
+      categories: [data.category],
     };
-    const success = await updatePost(id, token, postData);
+    const success = await updatePost(id as string, token, postData);
     if (success) {
       alert("投稿を更新しました。");
       router.push(`/admin/posts`);
@@ -62,11 +49,10 @@ export default function Page() {
   };
 
   const handleDeletePost = async () => {
-    if (!id || Array.isArray(id)) return;
-    if (!token || Array.isArray(token)) return;
+    if (!id || !token) return;
     if (!confirm("投稿を削除しますか？")) return;
 
-    const success = await deletePost(id, token);
+    const success = await deletePost(id as string, token);
     if (success) {
       alert("投稿を削除しました。");
       router.push("/admin/posts");
@@ -75,17 +61,10 @@ export default function Page() {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const categories = await fetchCategories();
-      setCategories(categories);
-    };
-
-    fetchData();
-  }, []);
-
   if (isLoading) return <p>読み込み中...</p>;
-  if (error) return <p>エラー: {error}</p>;
+  if (postError || categoriesError)
+    return <p>エラー: {postError || categoriesError}</p>;
+  if (!post) return <p>投稿が見つかりません。</p>;
 
   return (
     <div className="container mx-auto px-4">

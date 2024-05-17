@@ -7,7 +7,6 @@ import { Post } from "../../../types/Post";
 import Link from "next/link";
 import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
 import Image from "next/image";
-import { useAdminPosts } from "../_hooks/useAdminPosts";
 
 export default function Page() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -16,12 +15,18 @@ export default function Page() {
   useEffect(() => {
     if (!token) return;
 
-    const fetchData = async () => {
-      const posts = await useAdminPosts(token);
+    const fetcher = async () => {
+      const res = await fetch("/api/admin/posts", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token, // 👈 Header に token を付与
+        },
+      });
+      const { posts } = await res.json();
       setPosts([...posts]);
     };
 
-    fetchData();
+    fetcher();
   }, [token]);
 
   const limitContent = (content: string) => {

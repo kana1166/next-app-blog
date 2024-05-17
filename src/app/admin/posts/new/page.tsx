@@ -28,6 +28,7 @@ export default function Page() {
     const createdPost = await createPost(token, postData);
     if (createdPost) {
       alert("記事を作成しました。");
+      window.location.href = "/admin/posts";
     } else {
       alert("記事の作成に失敗しました。");
     }

@@ -28,6 +28,7 @@ export default function Page() {
 
     if (success) {
       alert("カテゴリーを作成しました。");
+      window.location.href = "/admin/posts";
     } else {
       alert("カテゴリーの作成に失敗しました。");
     }
