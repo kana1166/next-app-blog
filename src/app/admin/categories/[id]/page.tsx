@@ -49,7 +49,7 @@ export default function Page() {
     }
   };
 
-  const handleDeletePost = async () => {
+  const handleDeleteCategory = async () => {
     if (!id || Array.isArray(id)) return;
     if (!token || Array.isArray(token)) return;
 
@@ -77,7 +77,7 @@ export default function Page() {
         mode="edit"
         name={name}
         onSubmit={handleFormSubmit}
-        onDelete={handleDeletePost}
+        onDelete={handleDeleteCategory}
       />
     </div>
   );
