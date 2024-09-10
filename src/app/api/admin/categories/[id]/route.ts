@@ -1,59 +1,26 @@
 /** @format */
-import { PrismaClient } from "@prisma/client";
+
 import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { getCurrentUser } from "../../../../../util/supabase";
 
 const prisma = new PrismaClient();
 
 export const GET = async (
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) => {
+  const { currentUser, error } = await getCurrentUser(request);
+
+  if (error)
+    return NextResponse.json({ status: error.message }, { status: 400 });
+
   const { id } = params;
 
   try {
     const category = await prisma.category.findUnique({
-      where: { id: parseInt(id) },
-    });
-
-    if (!category) {
-      return NextResponse.json(
-        { status: "Category not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ status: "OK", category }, { status: 200 });
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error("Error fetching category:", error.message);
-      return NextResponse.json({ status: error.message }, { status: 500 });
-    } else {
-      console.error("Unknown error:", error);
-      return NextResponse.json(
-        { status: "Unknown error occurred" },
-        { status: 500 }
-      );
-    }
-  } finally {
-    await prisma.$disconnect();
-  }
-};
-
-export const PUT = async (
-  request: Request,
-  { params }: { params: { id: string } }
-) => {
-  const { id } = params;
-
-  const { name } = await request.json();
-
-  try {
-    const category = await prisma.category.update({
       where: {
         id: parseInt(id),
-      },
-      data: {
-        name,
       },
     });
 
@@ -64,12 +31,59 @@ export const PUT = async (
   }
 };
 
+// カテゴリーの更新時に送られてくるリクエストのbodyの型
+interface UpdateCategoryRequestBody {
+  name: string;
+}
+
+export const PUT = async (
+  request: NextRequest,
+  { params }: { params: { id: string } } // ここでリクエストパラメータを受け取る
+) => {
+  const { currentUser, error } = await getCurrentUser(request);
+
+  if (error)
+    return NextResponse.json({ status: error.message }, { status: 400 });
+
+  // paramsの中にidが入っているので、それを取り出す
+  const { id } = params;
+
+  // リクエストのbodyを取得
+  const { name }: UpdateCategoryRequestBody = await request.json();
+
+  try {
+    // idを指定して、Categoryを更新
+    const category = await prisma.category.update({
+      where: {
+        id: parseInt(id),
+      },
+      data: {
+        name,
+      },
+    });
+
+    // レスポンスを返す
+    return NextResponse.json({ status: "OK", category }, { status: 200 });
+  } catch (error) {
+    if (error instanceof Error)
+      return NextResponse.json({ status: error.message }, { status: 400 });
+  }
+};
+
 export const DELETE = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } } // ここでリクエストパラメータを受け取る
 ) => {
+  const { currentUser, error } = await getCurrentUser(request);
+
+  if (error)
+    return NextResponse.json({ status: error.message }, { status: 400 });
+
+  // paramsの中にidが入っているので、それを取り出す
   const { id } = params;
+
   try {
+    // idを指定して、Categoryを削除
     await prisma.category.delete({
       where: {
         id: parseInt(id),
