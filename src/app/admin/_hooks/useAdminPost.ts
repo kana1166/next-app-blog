@@ -88,10 +88,15 @@ export const updatePost = async (
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: token,
     },
     body: JSON.stringify(postData),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Error:", errorData);
+  }
+
   return response.ok;
 };
 
