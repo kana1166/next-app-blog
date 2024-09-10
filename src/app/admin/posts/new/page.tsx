@@ -1,56 +1,63 @@
+/** @format */
 "use client";
-import React from "react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { PostForm } from "../_components/Form";
-import { Category } from "../../../../types/Category";
+
+import PostForm from "@/app/admin/posts/_componets/PostForm";
+import { Category } from "@/types/Category";
+import React, { useState, useEffect } from "react";
+import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
+import { FormData } from "@/types/FormData";
+import { fetchCategories, createPost } from "@/app/admin/_hooks/useAdminPost";
 
 export default function Page() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const { token } = useSupabaseSession();
+  const [thumbnailImageKey, setThumbnailImageKey] = useState("");
+  const [title] = useState("");
+  const [content] = useState("");
 
-  const [thumbnailUrl, setthumbnailUrl] = useState(
-    "https://placehold.jp/800x400.png"
-  ); // 画像URLは、一旦このURL固定でお願いします。後ほど画像アップロード処理を実装します。
-  const router = useRouter();
+  const handleFormSubmit = async (data: FormData) => {
+    if (!token) return;
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    const postData = {
+      title: data.title,
+      content: data.content,
+      thumbnailImageKey: data.thumbnailImageKey,
+      categories: [data.category],
+    };
 
-    const res = await fetch("/api/admin/posts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title, content, thumbnailUrl, categories }),
-    });
-    const { id } = await res.json();
-    if (!id) {
+    const createdPost = await createPost(token, postData);
+    if (createdPost) {
+      alert("記事を作成しました。");
+      window.location.href = "/admin/posts";
+    } else {
       alert("記事の作成に失敗しました。");
-      return;
     }
-
-    router.push(`/admin/posts`);
-
-    alert("記事を作成しました。");
   };
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const categories = await fetchCategories();
+      setCategories(categories);
+    };
+
+    fetchData();
+  }, []);
   return (
-    <div>
-      <h1 className="text-center m-4">新規作成</h1>
-      <PostForm
-        mode="new"
-        title={title}
-        setTitle={setTitle}
-        content={content}
-        setContent={setContent}
-        categories={categories}
-        setCategories={setCategories}
-        thumbnailUrl={thumbnailUrl}
-        setThumbnailUrl={setthumbnailUrl}
-        onSubmit={onSubmit}
-      />
+    <div className="container mx-auto px-4">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-4">投稿作成</h1>
+      </div>
+      {categories.length > 0 && (
+        <PostForm
+          mode="new"
+          title={title}
+          content={content}
+          thumbnailImageKey={thumbnailImageKey}
+          setThumbnailImageKey={setThumbnailImageKey}
+          categories={categories}
+          onSubmit={handleFormSubmit}
+        />
+      )}
     </div>
   );
 }

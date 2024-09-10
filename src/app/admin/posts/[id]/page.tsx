@@ -1,80 +1,88 @@
+/** @format */
 "use client";
-
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import PostForm from "@/app/admin/posts/_componets/PostForm";
 import { useParams, useRouter } from "next/navigation";
-import { PostForm } from "../_components/Form";
-import { Category } from "@/types/Category";
-import { Post } from "@/types/Post";
+import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
+import { FormData } from "@/types/FormData";
+import { updatePost, deletePost } from "@/app/admin/_hooks/useAdminPost";
+import {
+  useFetchPostData,
+  useAdminPost,
+} from "@/app/admin/_hooks/useAdminPost";
 
 export default function Page() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [thumbnailUrl, setThumbnailUrl] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
-  const { id } = useParams();
+  const { id } = useParams<{ id: string | string[] }>();
   const router = useRouter();
+  const { token } = useSupabaseSession();
+  const [thumbnailImageKey, setThumbnailImageKey] = useState<string>("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    // フォームのデフォルトの動作をキャンセルします。
-    e.preventDefault();
+  useEffect(() => {
+    console.log("Token:", token); // トークンをログ出力して確認
+  }, [token]);
 
-    // 記事を作成します。
-    await fetch(`/api/admin/posts/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title, content, thumbnailUrl, categories }),
-    });
+  const { post, postError, isLoading, categories, categoriesError } =
+    useFetchPostData(id as string, token);
 
-    alert("記事を更新しました。");
-    router.push(`/admin/posts`);
+  useEffect(() => {
+    if (post && post.thumbnailImageKey) {
+      setThumbnailImageKey(post.thumbnailImageKey);
+    }
+  }, [post]);
+
+  const handleFormSubmit = async (data: FormData) => {
+    if (!id || !token) return;
+
+    const postData = {
+      title: data.title,
+      content: data.content,
+      thumbnailImageKey: data.thumbnailImageKey,
+      categories: [data.category],
+    };
+    const success = await updatePost(id as string, token, postData);
+    if (success) {
+      alert("投稿を更新しました。");
+      router.push(`/admin/posts`);
+    } else {
+      alert("投稿の更新に失敗しました。");
+    }
   };
 
   const handleDeletePost = async () => {
-    if (!confirm("記事を削除しますか？")) return;
+    if (!id || !token) return;
+    if (!confirm("投稿を削除しますか？")) return;
 
-    await fetch(`/api/admin/posts/${id}`, {
-      method: "DELETE",
-    });
-
-    alert("記事を削除しました。");
-
-    router.push("/admin/posts");
+    const success = await deletePost(id as string, token);
+    if (success) {
+      alert("投稿を削除しました。");
+      router.push("/admin/posts");
+    } else {
+      alert("投稿の削除に失敗しました。");
+    }
   };
 
-  useEffect(() => {
-    const fetcher = async () => {
-      const res = await fetch(`/api/admin/posts/${id}`);
-      const { post }: { post: Post } = await res.json();
-      setTitle(post.title);
-      setContent(post.content);
-      setThumbnailUrl(post.thumbnailUrl);
-      setCategories(post.postCategories.map((pc: any) => pc.category));
-    };
-
-    fetcher();
-  }, [id]);
+  if (isLoading) return <p>読み込み中...</p>;
+  if (postError || categoriesError)
+    return <p>エラー: {postError || categoriesError}</p>;
+  if (!post) return <p>投稿が見つかりません。</p>;
 
   return (
     <div className="container mx-auto px-4">
       <div className="mb-8">
-        <h1 className="text-center m-4 text-2xl font-bold mb-4">記事編集</h1>
+        <h1 className="text-2xl font-bold mb-4">編集</h1>
       </div>
-
-      <PostForm
-        mode="edit"
-        title={title}
-        setTitle={setTitle}
-        content={content}
-        setContent={setContent}
-        thumbnailUrl={thumbnailUrl}
-        setThumbnailUrl={setThumbnailUrl}
-        categories={categories}
-        setCategories={setCategories}
-        onSubmit={handleSubmit}
-        onDelete={handleDeletePost}
-      />
+      {categories.length > 0 && post && (
+        <PostForm
+          mode="edit"
+          title={post.title}
+          content={post.content}
+          categories={categories}
+          thumbnailImageKey={thumbnailImageKey}
+          setThumbnailImageKey={setThumbnailImageKey}
+          onSubmit={handleFormSubmit}
+          onDelete={handleDeletePost}
+        />
+      )}
     </div>
   );
 }

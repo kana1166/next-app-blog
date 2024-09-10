@@ -1,28 +1,47 @@
+/** @format */
+
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useRouteGuard } from "./_hooks/useRouteGuard";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  useRouteGuard();
+
+  const pathname = usePathname();
+  const isSelected = (href: string) => {
+    return pathname.includes(href);
+  };
+
   return (
-    <div className="flex">
-      <div className="w-[300px] h-screen bg-gray-100 flex flex-col">
-        <Link href="/admin/posts/new" className={"p-4 block hover:bg-blue-100"}>
-          記事作成
+    <>
+      {/* サイドバー */}
+      <aside className="fixed bg-gray-100 w-[280px] left-0 bottom-0 top-[72px]">
+        <Link
+          href="/admin/posts"
+          className={`p-4 block hover:bg-blue-100 ${
+            isSelected("/admin/posts") && "bg-blue-100"
+          }`}
+        >
+          記事一覧
         </Link>
         <Link
           href="/admin/categories"
-          className={"p-4 block hover:bg-blue-100 "}
+          className={`p-4 block hover:bg-blue-100 ${
+            isSelected("/admin/categories") && "bg-blue-100"
+          }`}
         >
-          カテゴリー管理
+          カテゴリー一覧
         </Link>
-      </div>
-      <div className="flex-1">
-        <div className="container mx-auto px-4">{children}</div>
-      </div>
-    </div>
+      </aside>
+
+      {/* メインエリア */}
+      <div className="ml-[280px] p-4">{children}</div>
+    </>
   );
 }

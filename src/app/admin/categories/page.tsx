@@ -1,21 +1,30 @@
-"use client";
+/** @format */
 
+"use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Category } from "@/types/Category";
+import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
+import { fetchCategories } from "@/app/admin/_hooks/useAdminPost";
 
 export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const { token } = useSupabaseSession();
 
   useEffect(() => {
     const fetcher = async () => {
-      const res = await fetch("/api/admin/categories");
-      const { categories } = await res.json();
-      setCategories(categories);
+      try {
+        const categories = await fetchCategories();
+        setCategories(categories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
     };
 
-    fetcher();
-  }, []);
+    if (token) {
+      fetcher();
+    }
+  }, [token]);
 
   return (
     <div className="">

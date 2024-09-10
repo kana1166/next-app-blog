@@ -1,6 +1,9 @@
+/** @format */
+
 "use client";
 import Link from "next/link";
-import { usePosts } from "./hooks/usePosts";
+import { usePosts } from "./_hooks/usePosts";
+import Image from "next/image";
 
 export default function Home() {
   const { posts } = usePosts();
@@ -38,7 +41,13 @@ export default function Home() {
               <div className="shadow-md m-12" key={post.id}>
                 <p className="p-4 text-xs">{formattedDate}</p>
                 <h2 className="p-2 text-2xl">{post.title}</h2>
-                <img src={post.thumbnailUrl} alt={post.title} />
+                <Image
+                  src={`https://qxsmvoftnuaqdbtoqkug.supabase.co/storage/v1/object/public/blog/${post.thumbnailImageKey}`}
+                  alt={post.title}
+                  width={600}
+                  height={400}
+                  className="w-full h-auto"
+                />
                 <p className="p-4"> {replacedContent}</p>
               </div>
             </Link>

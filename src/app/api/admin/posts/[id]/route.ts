@@ -1,10 +1,12 @@
+/** @format */
+
 import { NextRequest, NextResponse } from "next/server";
-import { Category, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export const GET = async (
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) => {
   const { id } = params;
@@ -16,32 +18,35 @@ export const GET = async (
       },
       include: {
         postCategories: {
-          include: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+          select: {
+            category: true,
           },
         },
       },
     });
 
-    return NextResponse.json({ status: "OK", post: post }, { status: 200 });
+    if (!post) {
+      return NextResponse.json({ status: "Post not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ status: "OK", post }, { status: 200 });
   } catch (error) {
-    if (error instanceof Error)
-      return NextResponse.json({ status: error.message }, { status: 400 });
+    console.error("Error fetching post:", error);
+    return NextResponse.json(
+      { status: "Failed to fetch post" },
+      { status: 400 }
+    );
   }
 };
 
 export const PUT = async (
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) => {
   const { id } = params;
 
-  const { title, content, categories, thumbnailUrl } = await request.json();
+  const { title, content, categories, thumbnailImageKey } =
+    await request.json();
 
   try {
     const post = await prisma.post.update({
@@ -51,7 +56,7 @@ export const PUT = async (
       data: {
         title,
         content,
-        thumbnailUrl,
+        thumbnailImageKey,
       },
     });
 
@@ -61,14 +66,24 @@ export const PUT = async (
       },
     });
 
-    for (const category of categories) {
-      await prisma.postCategory.create({
-        data: {
-          postId: post.id,
-          categoryId: category.id,
+    const category = await prisma.category.findMany({
+      where: {
+        id: {
+          in: categories,
         },
-      });
-    }
+      },
+    });
+
+    const postCategories = category.map((category) => {
+      return {
+        postId: post.id,
+        categoryId: category.id,
+      };
+    });
+
+    await prisma.postCategory.createMany({
+      data: postCategories,
+    });
 
     return NextResponse.json({ status: "OK", post: post }, { status: 200 });
   } catch (error) {
@@ -78,11 +93,10 @@ export const PUT = async (
 };
 
 export const DELETE = async (
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) => {
   const { id } = params;
-
   try {
     await prisma.post.delete({
       where: {

@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+/** @format */
 import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
@@ -24,12 +25,11 @@ export const GET = async (
 };
 
 export const PUT = async (
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) => {
   const { id } = params;
 
-  // リクエストのbodyを取得
   const { name } = await request.json();
 
   try {
@@ -54,7 +54,6 @@ export const DELETE = async (
   { params }: { params: { id: string } }
 ) => {
   const { id } = params;
-
   try {
     await prisma.category.delete({
       where: {
@@ -62,6 +61,7 @@ export const DELETE = async (
       },
     });
 
+    // レスポンスを返す
     return NextResponse.json({ status: "OK" }, { status: 200 });
   } catch (error) {
     if (error instanceof Error)

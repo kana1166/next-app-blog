@@ -1,20 +1,33 @@
+/** @format */
+
 "use client";
 import React from "react";
 import { useState, useEffect } from "react";
 import { Post } from "../../../types/Post";
 import Link from "next/link";
+import { useSupabaseSession } from "@/app/_hooks/useSupabaseSession";
+import Image from "next/image";
 
 export default function Page() {
-  const [posts, setPosts] = useState([] as Post[]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const { token } = useSupabaseSession();
 
   useEffect(() => {
+    if (!token) return;
+
     const fetcher = async () => {
-      const res = await fetch("/api/admin/posts");
+      const res = await fetch("/api/admin/posts", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token, // 👈 Header に token を付与
+        },
+      });
       const { posts } = await res.json();
-      setPosts(posts);
+      setPosts([...posts]);
     };
+
     fetcher();
-  }, []);
+  }, [token]);
 
   const limitContent = (content: string) => {
     const limit = 10;
@@ -36,16 +49,31 @@ export default function Page() {
     <>
       <div className="text-center m-4">
         記事一覧
+        <button className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+          <Link href="/admin/posts/new">新規作成</Link>
+        </button>
         <ul className="m-4">
           {posts.map((post) => (
-            <Link href={`/admin/posts/${post.id}`}>
+            <Link key={post.id} href={`/admin/posts/${post.id}`}>
               <div className="flex items-center border border-gray-200">
                 <div className="m-4">
-                  <img
-                    src={post.thumbnailUrl}
-                    alt={post.title}
-                    className="w-[200px] h-auto"
-                  />
+                  {post.thumbnailImageKey ? (
+                    <Image
+                      src={`https://qxsmvoftnuaqdbtoqkug.supabase.co/storage/v1/object/public/blog/${post.thumbnailImageKey}`}
+                      alt={post.title}
+                      width={200}
+                      height={200}
+                      className="w-[200px] h-auto"
+                    />
+                  ) : (
+                    <Image
+                      src="/path/to/default-image.jpg"
+                      alt="default image"
+                      width={200}
+                      height={200}
+                      className="w-[200px] h-auto"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2 m-4">
                   <p>投稿日時：{formatDate(post.createdAt)}</p>

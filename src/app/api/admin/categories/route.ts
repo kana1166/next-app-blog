@@ -1,3 +1,5 @@
+/** @format */
+
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -7,7 +9,7 @@ export const GET = async (request: NextRequest) => {
   try {
     const categories = await prisma.category.findMany({
       orderBy: {
-        createdAt: "desc", // 作成日時の降順で取得
+        createdAt: "desc",
       },
     });
 
@@ -30,11 +32,7 @@ export const POST = async (request: Request, context: any) => {
       },
     });
 
-    return NextResponse.json({
-      status: "OK",
-      message: "作成しました",
-      id: data.id,
-    });
+    return NextResponse.json({ status: "OK", data }, { status: 200 });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ status: error.message }, { status: 400 });
